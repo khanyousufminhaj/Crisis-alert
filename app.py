@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import threading
 import time
-import logging
 import io
 import traceback
 from datetime import datetime
@@ -36,8 +35,6 @@ def initialize_session_state():
         st.session_state.twitter_thread = None
     if 'twitter_stop_event' not in st.session_state:
         st.session_state.twitter_stop_event = None
-    if 'log_stream' not in st.session_state:
-        st.session_state.log_stream = log_stream
     if 'selected_location' not in st.session_state:
         st.session_state.selected_location = {"lat": 22.5726459, "lon": 88.3638953}
     if 'location_selected' not in st.session_state:
