@@ -18,51 +18,15 @@ from opencage.geocoder import OpenCageGeocode
 from opencage.geocoder import InvalidInputError, RateLimitExceededError, UnknownError
 from twilio.rest import Client
 
-# Set up logging
-def setup_logging():
-    """Configure logging for the application"""
-    log_file = f".logs/crisis_alerts_{datetime.now().strftime('%Y%m%d')}.log"
-    
-    # Create a logger
-    logger = logging.getLogger("crisis_alerts")
-    logger.setLevel(logging.INFO)
-    
-    # Clear any existing handlers
-    if logger.handlers:
-        logger.handlers.clear()
-    
-    # Create handlers
-    file_handler = logging.FileHandler(log_file)
-    stream_handler = logging.StreamHandler()
-    
-    # Create formatters and add to handlers
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    stream_handler.setFormatter(formatter)
-    
-    # Add handlers to logger
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-    
-    # Create string IO for Streamlit display
-    log_stream = io.StringIO()
-    string_handler = logging.StreamHandler(log_stream)
-    string_handler.setFormatter(formatter)
-    logger.addHandler(string_handler)
-    
-    return logger, log_stream
-
-# Initialize logger
-logger, log_stream = setup_logging()
-logger.info("Application starting")
+print("Application starting")
 
 # Initialize the database
 init_db()
-logger.info("Database initialized")
+print("Database initialized")
 
 # Page configuration
 st.set_page_config(page_title="Crisis Alert System", layout="wide")
-logger.info("Streamlit page configured")
+print("Streamlit page configured")
 
 def initialize_session_state():
     """Initialize session state variables"""
@@ -104,33 +68,33 @@ initialize_session_state()
 def start_twitter_stream():
     """Start the Twitter streaming thread"""
     if not st.session_state.twitter_stream_active:
-        logger.info("Starting Twitter stream")
+        print("Starting Twitter stream")
         thread, stop_event = create_twitter_stream_thread()
         thread.start()
         st.session_state.twitter_thread = thread
         st.session_state.twitter_stop_event = stop_event
         st.session_state.twitter_stream_active = True
-        logger.info("Twitter stream started successfully")
+        print("Twitter stream started successfully")
         st.success("Twitter stream started!")
     else:
-        logger.info("Twitter stream start requested but stream is already running")
+        print("Twitter stream start requested but stream is already running")
         st.info("Twitter stream is already running.")
 
 def stop_twitter_stream():
     """Stop the Twitter streaming thread"""
     if st.session_state.twitter_stream_active and st.session_state.twitter_stop_event:
-        logger.info("Stopping Twitter stream")
+        print("Stopping Twitter stream")
         st.session_state.twitter_stop_event.set()
         st.session_state.twitter_stream_active = False
-        logger.info("Twitter stream stopped successfully")
+        print("Twitter stream stopped successfully")
         st.success("Twitter stream stopped!")
     else:
-        logger.info("Twitter stream stop requested but no active stream found")
+        print("Twitter stream stop requested but no active stream found")
         st.info("Twitter stream is not running.")
 
 def confirm_alert(alert_id):
     """Confirm crisis alert and notify users"""
-    logger.info(f"Preparing to edit message for alert with ID: {alert_id}")
+    print(f"Preparing to edit message for alert with ID: {alert_id}")
     alert = get_alert_by_id(alert_id)
     if alert:
         if not st.session_state.edit_mode:
@@ -140,12 +104,12 @@ def confirm_alert(alert_id):
             st.rerun()
         else:
             update_alert_status(alert_id, 'confirmed')
-            logger.info(f"Alert {alert_id} status updated to 'confirmed'")
+            print(f"Alert {alert_id} status updated to 'confirmed'")
             
             alert['text'] = st.session_state.editing_alert_text
             notification_results = notify_users_in_radius(alert)
             st.session_state.notification_results = notification_results
-            logger.info(f"Sent {len(notification_results)} notifications for alert {alert_id} with edited message")
+            print(f"Sent {len(notification_results)} notifications for alert {alert_id} with edited message")
             
             st.session_state.edit_mode = False
             st.session_state.editing_alert_id = None
@@ -154,19 +118,19 @@ def confirm_alert(alert_id):
             st.success(f"Alert confirmed! Sent {len(notification_results)} notifications.")
             st.rerun()
     else:
-        logger.error(f"Failed to confirm alert: Alert with ID {alert_id} not found")
+        print(f"Failed to confirm alert: Alert with ID {alert_id} not found")
         st.error("Alert not found!")
 
 def dismiss_alert(alert_id):
     """Dismiss a potential alert"""
-    logger.info(f"Dismissing alert with ID: {alert_id}")
+    print(f"Dismissing alert with ID: {alert_id}")
     update_alert_status(alert_id, 'dismissed')
-    logger.info(f"Alert {alert_id} status updated to 'dismissed'")
+    print(f"Alert {alert_id} status updated to 'dismissed'")
     st.success("Alert dismissed!")
 
 def geocode_address(address):
     """Convert address to geocoordinates using OpenCage API"""
-    logger.info(f"Geocoding address: {address}")
+    print(f"Geocoding address: {address}")
     
     key = st.secrets["OpenCage"]["api_key"]
     geocoder = OpenCageGeocode(key)
@@ -179,8 +143,8 @@ def geocode_address(address):
             lon = result['geometry']['lng']
             formatted_address = result['formatted']
             
-            logger.info(f"Geocoded {address} to: {lat}, {lon}")
-            logger.info(f"Formatted address: {formatted_address}")
+            print(f"Geocoded {address} to: {lat}, {lon}")
+            print(f"Formatted address: {formatted_address}")
             
             st.session_state.selected_location = {"lat": lat, "lon": lon}
             st.session_state.geocoded_address = formatted_address
@@ -189,23 +153,23 @@ def geocode_address(address):
             
             return lat, lon, formatted_address
         else:
-            logger.warning(f"No geocoding results for address: {address}")
+            print(f"No geocoding results for address: {address}")
             st.session_state.geocoding_error = "Could not find coordinates for this address"
             st.session_state.location_selected = False
             return None, None, None
             
     except RateLimitExceededError as ex:
-        logger.error(f"OpenCage rate limit exceeded: {str(ex)}")
+        print(f"OpenCage rate limit exceeded: {str(ex)}")
         st.session_state.geocoding_error = "Geocoding service rate limit exceeded. Please try again later."
         st.session_state.location_selected = False
         return None, None, None
     except InvalidInputError as ex:
-        logger.error(f"OpenCage invalid input: {str(ex)}")
+        print(f"OpenCage invalid input: {str(ex)}")
         st.session_state.geocoding_error = f"Invalid address input: {str(ex)}"
         st.session_state.location_selected = False
         return None, None, None
     except Exception as ex:
-        logger.error(f"Geocoding error: {str(ex)}")
+        print(f"Geocoding error: {str(ex)}")
         st.session_state.geocoding_error = f"Geocoding error: {str(ex)}"
         st.session_state.location_selected = False
         return None, None, None
@@ -487,7 +451,7 @@ if page == "Dashboard":
                         st.info(f"Alert location: {st.session_state.test_tweet_location_desc} (Lat: {test_lat:.6f}, Lon: {test_lon:.6f})")
                         st.info("Go to the Dashboard to review and confirm this alert.")
                         
-                        logger.info(f"Tweet alert created - ID: {alert_id}, Location: {test_lat}, {test_lon}")
+                        print(f"Tweet alert created - ID: {alert_id}, Location: {test_lat}, {test_lon}")
                         
                         st.session_state.tweet_is_disaster = False
                         st.session_state.current_tweet_text = ""
@@ -524,7 +488,7 @@ if page == "Dashboard":
             4. On the Dashboard, you can review, edit and confirm the alert
             """)
     
-    logger.info("Dashboard page accessed")
+    print("Dashboard page accessed")
 
 elif page == "User Registration":
     st.title("Register for Crisis Alerts")
@@ -670,7 +634,7 @@ elif page == "User Registration":
                         lon = st.session_state.selected_location["lon"]
                         radius = st.session_state.selected_radius
                         
-                        logger.info(f"Registration: {phone_number}, location: ({lat}, {lon}), radius: {radius}")
+                        print(f"Registration: {phone_number}, location: ({lat}, {lon}), radius: {radius}")
                         
                         success = register_user(phone_number, lat, lon, radius)
                         if success:
@@ -697,8 +661,8 @@ elif page == "User Registration":
                     st.session_state.location_selected = False
                     st.rerun()
     
-    logger.info("User Registration page accessed")
+    print("User Registration page accessed")
 
 # Run the app
 if __name__ == "__main__":
-    logger.info("Main application started")
+    print("Main application started")
