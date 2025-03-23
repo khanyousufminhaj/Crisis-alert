@@ -544,6 +544,12 @@ elif page == "User Registration":
                             st.error(st.session_state.geocoding_error or "Could not geocode that address. Please try again.")
                 else:
                     st.warning("Please enter an address to geocode")
+            
+            if st.session_state.location_selected and st.session_state.geocoded_address:
+                next_button = st.button("Next ->", type="primary", use_container_width=True)
+                if next_button:
+                    st.rerun()
+            
         else:
             st.text("Enter your coordinates:")
             input_lat = st.number_input("Latitude", value=22.5726459, format="%.6f",
