@@ -6,3 +6,4 @@ twilio
 python-dotenv
 tweepy
 geopy
+scikit-learn
